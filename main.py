@@ -33,19 +33,26 @@ df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
 # TODO Change icon and title of the page
 app = dash.Dash()
 
-fig = px.bar(df, x="kwota", y="kategoria", orientation="h")
-fig.update_layout(
-    yaxis={"categoryorder": "total descending"}, xaxis_title=None, yaxis_title=None
-)
 app.layout = [
     html.Div(
         [
-            # TODO Widen those so that full year is visible
-            dcc.Dropdown(
-                options=YEARS, value=YEARS[0], clearable=False, id="year_dropdown"
+            html.Div(
+                dcc.Dropdown(
+                    options=YEARS,
+                    value=YEARS[0],
+                    clearable=False,
+                    id="year_dropdown",
+                ),
+                style={"width": "20%"},
             ),
-            dcc.Dropdown(
-                options=MONTHS, value=MONTHS[0], clearable=False, id="month_dropdown"
+            html.Div(
+                dcc.Dropdown(
+                    options=MONTHS,
+                    value=MONTHS[0],
+                    clearable=False,
+                    id="month_dropdown",
+                ),
+                style={"width": "20%"},
             ),
         ],
         style={
@@ -54,9 +61,9 @@ app.layout = [
             "justifyContent": "center",
         },
     ),
-    dcc.Graph(figure=fig, id="graph"),
+    dcc.Graph(figure=None, id="graph"),
     dash_table.DataTable(
-        data=df.to_dict("records"),
+        data=None,
         columns=[{"id": i, "name": i} for i in df.columns],
         page_size=20,
         fill_width=False,
