@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import dash
-from dash import dash_table, dcc, html, Input, Output, callback
+from dash import Dash, dash_table, dcc, html, Input, Output, callback
 
 MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 YEARS = [2024, 2025]
@@ -30,8 +29,7 @@ def filter_data(df: pd.DataFrame, date_filter: tuple[np.datetime64, np.datetime6
 
 df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
 
-# TODO Change icon and title of the page
-app = dash.Dash()
+app = Dash(title="DashPerFin")
 
 app.layout = [
     html.Div(
