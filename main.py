@@ -82,10 +82,17 @@ app.layout = [
 )
 def update_data(year, month):
     filtered_df = filter_data(df, date_filter_lookup(year, month))
+    filtered_df["kategoria_suma"] = (
+        filtered_df["kwota"].groupby(filtered_df["kategoria"]).transform("sum")
+    )
+    filtered_df.sort_values("kategoria_suma", inplace=True)
 
-    updated_figure = px.bar(filtered_df, x="kwota", y="kategoria", orientation="h")
-    updated_figure.update_layout(
-        yaxis={"categoryorder": "total descending"}, xaxis_title=None, yaxis_title=None
+    updated_figure = px.bar(
+        filtered_df,
+        x="kwota",
+        y="kategoria",
+        color="kategoria",
+        orientation="h",
     )
 
     updated_data = filtered_df.to_dict("records")
