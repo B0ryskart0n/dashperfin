@@ -57,32 +57,17 @@ df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
 
 app = Dash(title="DashPerFin")
 app.layout = [
-    html.Div(
-        [
-            html.Div(
-                dcc.Dropdown(
-                    options=YEARS,
-                    value=YEARS[0],
-                    clearable=False,
-                    id="year_dropdown",
-                ),
-                style={"width": "20%"},
-            ),
-            html.Div(
-                dcc.Dropdown(
-                    options=MONTHS,
-                    value=MONTHS[0],
-                    clearable=False,
-                    id="month_dropdown",
-                ),
-                style={"width": "20%"},
-            ),
-        ],
-        style={
-            "display": "flex",
-            "flexDirection": "row",
-            "justifyContent": "center",
-        },
+    dcc.RadioItems(
+        options=YEARS,
+        value=YEARS[0],
+        inline=True,
+        id="year_selection",
+    ),
+    dcc.RadioItems(
+        options=MONTHS,
+        value=MONTHS[0],
+        inline=True,
+        id="month_selection",
     ),
     dcc.Graph(figure=None, id="graph"),
     dash_table.DataTable(
@@ -100,5 +85,4 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 # TODO Wyświetlanie całej kwoty
-# TODO Zmiana miesiąca radio button
 # TODO Wyświetlanie tylko daty bez "T00:00:00"
