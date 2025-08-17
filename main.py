@@ -24,13 +24,38 @@ def filter_data(df: pd.DataFrame, date_filter: tuple[np.datetime64, np.datetime6
     min_date = date_filter[0]
     max_date = date_filter[1]
 
-    return df[(min_date <= df.termin) & (df.termin < max_date)]
+    return df.loc[(min_date <= df.termin) & (df.termin < max_date), :].copy()
+
+
+@callback(
+    Output("graph", "figure"),
+    Output("table", "data"),
+    Input("year_selection", "value"),
+    Input("month_selection", "value"),
+)
+def update_data(year, month):
+
+    filtered_df = filter_data(df, date_filter_lookup(year, month))
+    filtered_df.loc[:, "kategoria_suma"] = (
+        filtered_df["kwota"].groupby(filtered_df["kategoria"]).transform("sum")
+    )
+    filtered_df.sort_values("kategoria_suma", inplace=True)
+
+    updated_figure = px.bar(
+        filtered_df,
+        x="kwota",
+        y="kategoria",
+        color="kategoria",
+        orientation="h",
+    )
+
+    updated_data = filtered_df.to_dict("records")
+    return (updated_figure, updated_data)
 
 
 df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
 
 app = Dash(title="DashPerFin")
-
 app.layout = [
     html.Div(
         [
@@ -71,33 +96,9 @@ app.layout = [
     ),
 ]
 
-
-@callback(
-    Output("graph", "figure"),
-    Output("table", "data"),
-    Input("year_dropdown", "value"),
-    Input("month_dropdown", "value"),
-)
-def update_data(year, month):
-    filtered_df = filter_data(df, date_filter_lookup(year, month))
-    filtered_df["kategoria_suma"] = (
-        filtered_df["kwota"].groupby(filtered_df["kategoria"]).transform("sum")
-    )
-    filtered_df.sort_values("kategoria_suma", inplace=True)
-
-    updated_figure = px.bar(
-        filtered_df,
-        x="kwota",
-        y="kategoria",
-        color="kategoria",
-        orientation="h",
-    )
-
-    updated_data = filtered_df.to_dict("records")
-    return (updated_figure, updated_data)
-
-
 if __name__ == "__main__":
     app.run(debug=True)
 
-# TODO Executable that opens terminal, runs the app redirecting to the site
+# TODO Wyświetlanie całej kwoty
+# TODO Zmiana miesiąca radio button
+# TODO Wyświetlanie tylko daty bez "T00:00:00"
