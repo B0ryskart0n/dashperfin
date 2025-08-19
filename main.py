@@ -24,21 +24,22 @@ def filter_data(df: pd.DataFrame, date_filter: tuple[np.datetime64, np.datetime6
     min_date = date_filter[0]
     max_date = date_filter[1]
 
-    return df.loc[(min_date <= df.termin) & (df.termin < max_date), :].copy()
+    return df.loc[(min_date <= df["termin"]) & (df["termin"] < max_date), :].copy()
 
 
 @callback(
     Output("graph", "figure"),
     Output("table", "data"),
+    Output("table", "columns"),
     Input("year_selection", "value"),
     Input("month_selection", "value"),
 )
 def update_data(year, month):
-
     filtered_df = filter_data(df, date_filter_lookup(year, month))
-    filtered_df.loc[:, "kategoria_suma"] = (
+    filtered_df["kategoria_suma"] = (
         filtered_df["kwota"].groupby(filtered_df["kategoria"]).transform("sum")
     )
+    # Filtering by the sum of amount spent for a category makes the plotting sorted colors repeating
     filtered_df.sort_values("kategoria_suma", inplace=True)
 
     updated_figure = px.bar(
@@ -49,8 +50,19 @@ def update_data(year, month):
         orientation="h",
     )
 
-    updated_data = filtered_df.to_dict("records")
-    return (updated_figure, updated_data)
+    filtered_df["data"] = filtered_df["termin"].dt.strftime("%Y-%m-%d")
+
+    column_ids = ["konto", "data", "kwota", "kategoria", "komentarz"]
+    column_names = column_ids
+    column_types = ["text", "datetime", "numeric", "text", "text"]
+
+    updated_data_columns = [
+        {"id": id, "name": name, "type": type}
+        for (id, name, type) in zip(column_ids, column_names, column_types)
+    ]
+
+    updated_data = filtered_df[column_ids].to_dict("records")
+    return (updated_figure, updated_data, updated_data_columns)
 
 
 df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
@@ -72,8 +84,8 @@ app.layout = [
     dcc.Graph(figure=None, id="graph"),
     dash_table.DataTable(
         data=None,
-        columns=[{"id": i, "name": i} for i in df.columns],
-        page_size=20,
+        columns=None,
+        page_action="none",
         fill_width=False,
         filter_action="native",
         sort_action="native",
@@ -85,4 +97,5 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 # TODO Wyświetlanie całej kwoty
-# TODO Wyświetlanie tylko daty bez "T00:00:00"
+# TODO Always display .00 in kwota
+# TODO Align kategoria and komentarz to the left
