@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import plotly.express as px
-from dash import Dash, dash_table, dcc, html, Input, Output, callback
+from dash import Dash, dash_table, dcc, Input, Output, callback
 
 MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 YEARS = [2024, 2025]
@@ -55,10 +55,13 @@ def update_data(year, month):
     column_ids = ["konto", "data", "kwota", "kategoria", "komentarz"]
     column_names = column_ids
     column_types = ["text", "datetime", "numeric", "text", "text"]
+    column_formats = [{}, {}, {"specifier": ".2f"}, {}, {}]
 
     updated_data_columns = [
-        {"id": id, "name": name, "type": type}
-        for (id, name, type) in zip(column_ids, column_names, column_types)
+        {"id": id, "name": name, "type": type, "format": format}
+        for (id, name, type, format) in zip(
+            column_ids, column_names, column_types, column_formats
+        )
     ]
 
     updated_data = filtered_df[column_ids].to_dict("records")
@@ -89,6 +92,7 @@ app.layout = [
         fill_width=False,
         filter_action="native",
         sort_action="native",
+        style_cell_conditional=[{"if": {"column_type": "text"}, "textAlign": "left"}],
         id="table",
     ),
 ]
@@ -97,5 +101,3 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 # TODO Wyświetlanie całej kwoty
-# TODO Always display .00 in kwota
-# TODO Align kategoria and komentarz to the left
