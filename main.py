@@ -28,7 +28,7 @@ def filter_data(df: pd.DataFrame, date_filter: tuple[np.datetime64, np.datetime6
 
 
 @callback(
-    Output("graph", "figure"),
+    Output("month_graph", "figure"),
     Output("table", "data"),
     Output("table", "columns"),
     Input("year_selection", "value"),
@@ -84,7 +84,8 @@ app.layout = [
         inline=True,
         id="month_selection",
     ),
-    dcc.Graph(figure=None, id="graph"),
+    dcc.Graph(figure=None, id="month_graph"),
+    dcc.Graph(figure=None, id="series_graph"),
     dash_table.DataTable(
         data=None,
         columns=None,
