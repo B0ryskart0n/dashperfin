@@ -7,52 +7,47 @@ MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 YEARS = [2024, 2025]
 
 
-def date_filter_lookup(year: int, month: int):
-    if month == 12:
-        return (
-            np.datetime64(f"{year}-12-01"),
-            np.datetime64(f"{year+1}-01-01"),
-        )
-    else:
-        return (
-            np.datetime64(f"{year}-{month:02d}-01"),
-            np.datetime64(f"{year}-{month+1:02d}-01"),
-        )
-
-
-def filter_data(df: pd.DataFrame, date_filter: tuple[np.datetime64, np.datetime64]):
-    min_date = date_filter[0]
-    max_date = date_filter[1]
-
-    return df.loc[(min_date <= df["termin"]) & (df["termin"] < max_date), :].copy()
-
-
 @callback(
-    Output("month_graph", "figure"),
     Output("table", "data"),
     Input("year_selection", "value"),
     Input("month_selection", "value"),
 )
 def update_data(year, month):
-    filtered_df = filter_data(df, date_filter_lookup(year, month))
+    if month == 12:
+        min_date = np.datetime64(f"{year}-12-01")
+        max_date = np.datetime64(f"{year+1}-01-01")
+    else:
+        min_date = np.datetime64(f"{year}-{month:02d}-01")
+        max_date = np.datetime64(f"{year}-{month+1:02d}-01")
+
+    # Shadowing global df with local (filtered) df
+    filtered_df = df.loc[
+        (min_date <= df["termin"]) & (df["termin"] < max_date), :
+    ].copy()
+
     filtered_df["kategoria_suma"] = (
         filtered_df["kwota"].groupby(filtered_df["kategoria"]).transform("sum")
     )
+    filtered_df["data"] = filtered_df["termin"].dt.strftime("%Y-%m-%d")
+
     # Filtering by the sum of amount spent for a category makes the plotting sorted colors repeating
     filtered_df.sort_values("kategoria_suma", inplace=True)
 
-    updated_figure = px.bar(
-        filtered_df,
+    return filtered_df[column_ids].to_dict("records")
+
+
+@callback(
+    Output("month_graph", "figure"),
+    Input("table", "data"),
+)
+def update_month_graph(data):
+    return px.bar(
+        data_frame=pd.DataFrame.from_records(data),
         x="kwota",
         y="kategoria",
         color="kategoria",
         orientation="h",
     )
-
-    filtered_df["data"] = filtered_df["termin"].dt.strftime("%Y-%m-%d")
-
-    updated_data = filtered_df[column_ids].to_dict("records")
-    return (updated_figure, updated_data)
 
 
 df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
