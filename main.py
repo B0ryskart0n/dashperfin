@@ -30,7 +30,6 @@ def filter_data(df: pd.DataFrame, date_filter: tuple[np.datetime64, np.datetime6
 @callback(
     Output("month_graph", "figure"),
     Output("table", "data"),
-    Output("table", "columns"),
     Input("year_selection", "value"),
     Input("month_selection", "value"),
 )
@@ -52,23 +51,16 @@ def update_data(year, month):
 
     filtered_df["data"] = filtered_df["termin"].dt.strftime("%Y-%m-%d")
 
-    column_ids = ["konto", "data", "kwota", "kategoria", "komentarz"]
-    column_names = column_ids
-    column_types = ["text", "datetime", "numeric", "text", "text"]
-    column_formats = [{}, {}, {"specifier": ".2f"}, {}, {}]
-
-    updated_data_columns = [
-        {"id": id, "name": name, "type": type, "format": format}
-        for (id, name, type, format) in zip(
-            column_ids, column_names, column_types, column_formats
-        )
-    ]
-
     updated_data = filtered_df[column_ids].to_dict("records")
-    return (updated_figure, updated_data, updated_data_columns)
+    return (updated_figure, updated_data)
 
 
 df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
+
+column_ids = ["konto", "data", "kwota", "kategoria", "komentarz"]
+column_names = column_ids
+column_types = ["text", "datetime", "numeric", "text", "text"]
+column_formats = [{}, {}, {"specifier": ".2f"}, {}, {}]
 
 app = Dash(title="DashPerFin")
 app.layout = [
@@ -88,7 +80,12 @@ app.layout = [
     dcc.Graph(figure=None, id="series_graph"),
     dash_table.DataTable(
         data=None,
-        columns=None,
+        columns=[
+            {"id": id, "name": name, "type": type, "format": format}
+            for (id, name, type, format) in zip(
+                column_ids, column_names, column_types, column_formats
+            )
+        ],
         page_action="none",
         fill_width=False,
         filter_action="native",
