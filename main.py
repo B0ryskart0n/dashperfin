@@ -39,8 +39,11 @@ def update_store(year, month):
     Input("store", "data"),
 )
 def update_table(data):
-    # TODO Might be slow, could be optimised.
-    return pd.DataFrame.from_records(data)[column_ids].to_dict("records")
+    if len(data) == 0:
+        return []
+    else:
+        # TODO Might be slow, could be optimised.
+        return pd.DataFrame.from_records(data)[column_ids].to_dict("records")
 
 
 @callback(
@@ -48,13 +51,16 @@ def update_table(data):
     Input("store", "data"),
 )
 def update_month_graph(data):
-    return px.bar(
-        data_frame=pd.DataFrame.from_records(data),
-        x="kwota",
-        y="kategoria",
-        color="kategoria",
-        orientation="h",
-    )
+    if len(data) == 0:
+        return None
+    else:
+        return px.bar(
+            data_frame=pd.DataFrame.from_records(data),
+            x="kwota",
+            y="kategoria",
+            color="kategoria",
+            orientation="h",
+        )
 
 
 df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
