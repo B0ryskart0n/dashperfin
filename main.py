@@ -8,11 +8,11 @@ YEARS = [2024, 2025]
 
 
 @callback(
-    Output("table", "data"),
+    Output("store", "data"),
     Input("year_selection", "value"),
     Input("month_selection", "value"),
 )
-def update_data(year, month):
+def update_store(year, month):
     if month == 12:
         min_date = np.datetime64(f"{year}-12-01")
         max_date = np.datetime64(f"{year+1}-01-01")
@@ -24,21 +24,28 @@ def update_data(year, month):
     filtered_df = df.loc[
         (min_date <= df["termin"]) & (df["termin"] < max_date), :
     ].copy()
-
     filtered_df["kategoria_suma"] = (
         filtered_df["kwota"].groupby(filtered_df["kategoria"]).transform("sum")
     )
-    filtered_df["data"] = filtered_df["termin"].dt.strftime("%Y-%m-%d")
 
     # Filtering by the sum of amount spent for a category makes the plotting sorted colors repeating
     filtered_df.sort_values("kategoria_suma", inplace=True)
 
-    return filtered_df[column_ids].to_dict("records")
+    return filtered_df.to_dict("records")
+
+
+@callback(
+    Output("table", "data"),
+    Input("store", "data"),
+)
+def update_table(data):
+    # TODO Might be slow, could be optimised.
+    return pd.DataFrame.from_records(data)[column_ids].to_dict("records")
 
 
 @callback(
     Output("month_graph", "figure"),
-    Input("table", "data"),
+    Input("store", "data"),
 )
 def update_month_graph(data):
     return px.bar(
@@ -51,14 +58,19 @@ def update_month_graph(data):
 
 
 df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
+df["data"] = df["termin"].dt.strftime("%Y-%m-%d")
+df["rok"] = df["termin"].dt.year
+df["miesiac"] = df["termin"].dt.month
 
 column_ids = ["konto", "data", "kwota", "kategoria", "komentarz"]
 column_names = column_ids
 column_types = ["text", "datetime", "numeric", "text", "text"]
+# TODO Maybe displaying datetime as date can be handled here instead of creating a new column.
 column_formats = [{}, {}, {"specifier": ".2f"}, {}, {}]
 
 app = Dash(title="DashPerFin")
 app.layout = [
+    dcc.Store(id="store"),
     dcc.RadioItems(
         options=YEARS,
         value=YEARS[0],
