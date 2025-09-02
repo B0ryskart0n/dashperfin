@@ -13,16 +13,18 @@ YEARS = [2024, 2025]
     Input("month_selection", "value"),
 )
 def update_store(year, month):
+    # TODO Consider switching to pd.Period
     if month == 12:
-        min_date = np.datetime64(f"{year}-12-01")
-        max_date = np.datetime64(f"{year+1}-01-01")
+        min_date = f"{year}-12-01"
+        max_date = f"{year+1}-01-01"
     else:
-        min_date = np.datetime64(f"{year}-{month:02d}-01")
-        max_date = np.datetime64(f"{year}-{month+1:02d}-01")
+        min_date = f"{year}-{month:02d}-01"
+        max_date = f"{year}-{month+1:02d}-01"
 
-    # Shadowing global df with local (filtered) df
     filtered_df = df.loc[
-        (min_date <= df["termin"]) & (df["termin"] < max_date), :
+        (min_date <= df["dzień"]) & (df["dzień"] < max_date),
+        # Need to filter out pandas.Period columns since those are not JSON serializable
+        column_ids,
     ].copy()
     filtered_df["kategoria_suma"] = (
         filtered_df["kwota"].groupby(filtered_df["kategoria"]).transform("sum")
@@ -38,12 +40,9 @@ def update_store(year, month):
     Output("table", "data"),
     Input("store", "data"),
 )
+# TODO Consider going back to updating the table.data
 def update_table(data):
-    if len(data) == 0:
-        return []
-    else:
-        # TODO Might be slow, could be optimised.
-        return pd.DataFrame.from_records(data)[column_ids].to_dict("records")
+    return data
 
 
 @callback(
@@ -63,16 +62,31 @@ def update_month_graph(data):
         )
 
 
+# Polish columns are meant for display, while English ones should remain private.
 df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
-df["data"] = df["termin"].dt.strftime("%Y-%m-%d")
-df["rok"] = df["termin"].dt.year
-df["miesiac"] = df["termin"].dt.month
+df["dzień"] = df["termin"].dt.strftime("%Y-%m-%d")
+df["day"] = df["termin"].dt.to_period(freq="D")
+df["month"] = df["termin"].dt.to_period(freq="M")
 
-column_ids = ["konto", "data", "kwota", "kategoria", "komentarz"]
+column_ids = ["konto", "dzień", "kwota", "kategoria", "komentarz"]
 column_names = column_ids
 column_types = ["text", "datetime", "numeric", "text", "text"]
 # TODO Maybe displaying datetime as date can be handled here instead of creating a new column.
 column_formats = [{}, {}, {"specifier": ".2f"}, {}, {}]
+
+# TODO Better name
+# `as_index=False` flattens the output and is the format that px expects.
+data_frame = df.groupby(["month", "kategoria"], as_index=False).aggregate(
+    {"kwota": "sum"}
+)
+data_frame["month"] = data_frame["month"].dt.to_timestamp()
+
+series_figure = px.line(
+    data_frame=data_frame,
+    x="month",
+    y="kwota",
+    color="kategoria",
+)
 
 app = Dash(title="DashPerFin")
 app.layout = [
@@ -90,7 +104,8 @@ app.layout = [
         id="month_selection",
     ),
     dcc.Graph(figure=None, id="month_graph"),
-    dcc.Graph(figure=None, id="series_graph"),
+    # TODO Write a selection of kategoria for the series_figure
+    dcc.Graph(figure=series_figure, id="series_graph"),
     dash_table.DataTable(
         data=None,
         columns=[
