@@ -1,7 +1,7 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import plotly.express as px
-from dash import Dash, dash_table, dcc, html, Input, Output, callback
+from dash import Dash, Input, Output, callback, dash_table, dcc, html
 
 MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 YEARS = [2024, 2025, 2026]
@@ -36,15 +36,14 @@ def update_table(data):
     return data
 
 
-@callback(
-    Output("spent_this_month", "children"),
-    Input("store", "data")
-)
+@callback(Output("spent_this_month", "children"), Input("store", "data"))
 def update_spent_this_month(data):
     if len(data) == 0:
         return "W tym miesiącu w sumie: 0.00"
     else:
-        return "W tym miesiącu w sumie: " + "{:,.2f}".format(pd.DataFrame.from_records(data)["kwota"].sum())
+        return "W tym miesiącu w sumie: " + "{:,.2f}".format(
+            pd.DataFrame.from_records(data)["kwota"].sum()
+        )
 
 
 @callback(
@@ -99,13 +98,29 @@ categories = np.sort(categories)
 app = Dash(title="DashPerFin")
 app.layout = [
     dcc.Store(id="store"),
-    html.Div([
-        html.Div([
-            dcc.RadioItems(options=YEARS, value=YEARS[0], inline=True, id="year_selection"),
-            dcc.RadioItems(options=MONTHS, value=MONTHS[0], inline=True, id="month_selection"),
-        ]),
-        html.Div(children="", id="spent_this_month"),
-        ], style={"display": "flex", "justify-content": "space-between", "align-items": "center"}),
+    html.Div(
+        [
+            html.Div(
+                [
+                    dcc.RadioItems(
+                        options=YEARS, value=YEARS[0], inline=True, id="year_selection"
+                    ),
+                    dcc.RadioItems(
+                        options=MONTHS,
+                        value=MONTHS[0],
+                        inline=True,
+                        id="month_selection",
+                    ),
+                ]
+            ),
+            html.Div(children="", id="spent_this_month"),
+        ],
+        style={
+            "display": "flex",
+            "justify-content": "space-between",
+            "align-items": "center",
+        },
+    ),
     dcc.Graph(figure=None, id="month_graph"),
     dcc.Dropdown(
         options=categories,
