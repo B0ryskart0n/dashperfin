@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
 import plotly.express as px
-from dash import Dash, dash_table, dcc, Input, Output, callback
+from dash import Dash, dash_table, dcc, html, Input, Output, callback
 
 MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-YEARS = [2024, 2025]
+YEARS = [2024, 2025, 2026]
 
 
 @callback(
@@ -34,6 +34,17 @@ def update_store(year, month):
 # TODO Consider going back to updating the table.data
 def update_table(data):
     return data
+
+
+@callback(
+    Output("spent_this_month", "children"),
+    Input("store", "data")
+)
+def update_spent_this_month(data):
+    if len(data) == 0:
+        return "W tym miesiącu w sumie: 0.00"
+    else:
+        return "W tym miesiącu w sumie: " + "{:,.2f}".format(pd.DataFrame.from_records(data)["kwota"].sum())
 
 
 @callback(
@@ -83,25 +94,19 @@ monthly_categories = df.groupby(["month", "kategoria"], as_index=False).agg(
 )
 monthly_categories["month"] = monthly_categories["month"].dt.to_timestamp()
 categories = monthly_categories["kategoria"].unique()
-categories.sort()
+categories = np.sort(categories)
 
 app = Dash(title="DashPerFin")
 app.layout = [
     dcc.Store(id="store"),
-    dcc.RadioItems(
-        options=YEARS,
-        value=YEARS[0],
-        inline=True,
-        id="year_selection",
-    ),
-    dcc.RadioItems(
-        options=MONTHS,
-        value=MONTHS[0],
-        inline=True,
-        id="month_selection",
-    ),
+    html.Div([
+        html.Div([
+            dcc.RadioItems(options=YEARS, value=YEARS[0], inline=True, id="year_selection"),
+            dcc.RadioItems(options=MONTHS, value=MONTHS[0], inline=True, id="month_selection"),
+        ]),
+        html.Div(children="", id="spent_this_month"),
+        ], style={"display": "flex", "justify-content": "space-between", "align-items": "center"}),
     dcc.Graph(figure=None, id="month_graph"),
-    # TODO Wyświetlanie całej kwoty
     dcc.Dropdown(
         options=categories,
         value=[],
