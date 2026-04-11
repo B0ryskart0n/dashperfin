@@ -82,6 +82,7 @@ def update_series_graph(values):
     )
 
 
+# TODO Update data loading to be a dynamic thing and add a button to refresh this
 # Polish columns are meant for display, while English ones should remain private.
 df = pd.read_excel("budzet.ods", sheet_name="dane", decimal=",")
 df["dzień"] = df["termin"].dt.strftime("%Y-%m-%d")
@@ -109,7 +110,7 @@ app.layout = [
             html.Div(
                 [
                     dcc.RadioItems(
-                        options=YEARS, value=YEARS[0], inline=True, id="year_selection"
+                        options=YEARS, value=YEARS[-1], inline=True, id="year_selection"
                     ),
                     dcc.RadioItems(
                         options=MONTHS,
