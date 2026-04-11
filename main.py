@@ -73,7 +73,7 @@ def update_month_graph(data):
     Output("series_graph", "figure"),
     Input("category_selection", "value"),
 )
-def update_month_graph(values):
+def update_series_graph(values):
     return px.line(
         data_frame=monthly_categories[monthly_categories["kategoria"].isin(values)],
         x="month",
