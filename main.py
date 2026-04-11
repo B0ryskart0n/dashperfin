@@ -16,13 +16,18 @@ def update_store(year, month):
     period = pd.Period(year=year, month=month, freq="M")
 
     # Need to filter out pandas.Period columns since those are not JSON serializable
-    filtered_df = df.loc[df["month"] == period, column_ids].copy()
+    filtered_df: pd.DataFrame = df.loc[df["month"] == period, column_ids].copy()
     filtered_df["category_sum"] = filtered_df.groupby("kategoria")["kwota"].transform(
         "sum"
     )
 
-    # Filtering by the sum of amount spent for a category makes the plotting sorted colors repeating
-    filtered_df.sort_values("category_sum", inplace=True)
+    # Sorting by category sum and transaction sum so that plotting is pretty.
+    # Sorting by "category_sum" makes plot bars appear in ascending order, nicely colored.
+    # Sorting by "kwota" makes the x log scale easier to read with smaller transactions appearing larger.
+    filtered_df.sort_values(
+        ["category_sum", "kwota"],
+        inplace=True,
+    )
 
     return filtered_df.to_dict("records")
 
@@ -60,6 +65,7 @@ def update_month_graph(data):
             y="kategoria",
             color="kategoria",
             orientation="h",
+            log_x=True,
         )
 
 
